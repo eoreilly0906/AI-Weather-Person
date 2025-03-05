@@ -29,22 +29,41 @@ const parser = StructuredOutputParser.fromZodSchema(z.object({
 const formatInstructions = parser.getFormatInstructions();
 // TODO: Define the prompt template
 const promptTemplate = new PromptTemplate({
-    template: 'You are Shaggy from Scooby-Doo and reading the weather forcast. For the location {location}, provide the weather forecast.\n\n{format_instructions}',
+    template: 'You are Shaggy from Scooby-Doo, reading the 5-day weather forecast for {location}. Give the forecast in your usual laid-back and fun style.\n\n{format_instructions}',
     inputVariables: ['location', 'weather_data'],
     partialVariables: { format_instructions: formatInstructions },
 });
 // Function to fetch weather data from OpenWeather API
+// Function to fetch 5-day weather data from OpenWeather API
 const getWeatherData = async (location) => {
     try {
-        const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
+        const response = await axios.get(`https://api.openweathermap.org/data/2.5/forecast`, {
             params: {
                 q: location,
                 appid: openweathermapApiKey,
                 units: 'metric', // Use 'imperial' for Fahrenheit
             },
         });
-        const { weather, main, wind } = response.data;
-        return `Temperature: ${main.temp}°C, Feels Like: ${main.feels_like}°C, Condition: ${weather[0].description}, Humidity: ${main.humidity}%, Wind Speed: ${wind.speed} m/s.`;
+        const { list } = response.data;
+        // Process data to get daily forecasts
+        const dailyForecasts = {};
+        list.forEach((entry) => {
+            const date = entry.dt_txt.split(" ")[0]; // Extract date (YYYY-MM-DD)
+            if (!dailyForecasts[date]) {
+                dailyForecasts[date] = { temp: [], descriptions: [] };
+            }
+            dailyForecasts[date].temp.push(entry.main.temp);
+            dailyForecasts[date].descriptions.push(entry.weather[0].description);
+        });
+        // Format the forecast output
+        const formattedForecast = Object.entries(dailyForecasts)
+            .map(([date, data]) => {
+            const avgTemp = (data.temp.reduce((sum, t) => sum + t, 0) / data.temp.length).toFixed(1);
+            const commonDescription = data.descriptions.sort((a, b) => data.descriptions.filter(v => v === a).length - data.descriptions.filter(v => v === b).length).pop(); // Most common description
+            return `${date}: Avg Temp: ${avgTemp}°C, Condition: ${commonDescription}`;
+        })
+            .join("\n");
+        return formattedForecast;
     }
     catch (error) {
         console.error('Error fetching weather:', error);
