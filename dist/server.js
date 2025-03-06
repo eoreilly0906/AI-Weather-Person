@@ -16,18 +16,18 @@ if (!apiKey || !openweathermapApiKey) {
 }
 const app = express();
 app.use(express.json());
-// TODO: Initialize the OpenAI model
+//Initialize the OpenAI model
 const openai = new OpenAI({
     apiKey: apiKey,
 });
-// TODO: Define the parser for the structured output
+// Define the parser for the structured output
 const parser = StructuredOutputParser.fromZodSchema(z.object({
     location: z.string(),
     forecast: z.string(),
 }));
-// TODO: Get the format instructions from the parser
+//  Get the format instructions from the parser
 const formatInstructions = parser.getFormatInstructions();
-// TODO: Define the prompt template
+//  Define the prompt template
 const promptTemplate = new PromptTemplate({
     template: 'You are Shaggy from Scooby-Doo, reading the 5-day weather forecast for {location}. Give the forecast in your usual laid-back and fun style.\n\n{format_instructions}',
     inputVariables: ['location', 'weather_data'],
