@@ -52,7 +52,7 @@ const getWeatherData = async (location: string) => {
       params: {
         q: location,
         appid: openweathermapApiKey,
-        units: 'metric', // Use 'imperial' for Fahrenheit
+        units: 'metric', 
       },
     });
 
